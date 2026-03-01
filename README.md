@@ -10,6 +10,7 @@ Deep Packet Inspection (DPI) is a technology used to examine the contents of net
 3. [Usage](#3-usage)
 4. [Networking Background](#4-networking-background)
 5. [Project Overview](#5-project-overview)
+6. [Understanding the Output](#6-understanding-the-output)
 
 ---
 
@@ -156,7 +157,7 @@ TLS Client Hello:
 ```
 ---
 
-## 11. Understanding the Output
+## 6. Understanding the Output
 
 ### Sample Output
 
