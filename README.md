@@ -154,3 +154,73 @@ TLS Client Hello:
                     │ - Report    │
                     └─────────────┘
 ```
+---
+
+## 11. Understanding the Output
+
+### Sample Output
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║              DPI ENGINE v2.0 (Multi-threaded)                 ║
+╠══════════════════════════════════════════════════════════════╣
+║ Load Balancers:  2    FPs per LB:  2    Total FPs:  4        ║
+╚══════════════════════════════════════════════════════════════╝
+
+[Rules] Blocked app: YouTube
+[Rules] Blocked IP: 192.168.1.50
+
+[Reader] Processing packets...
+[Reader] Done reading 77 packets
+
+╔══════════════════════════════════════════════════════════════╗
+║                      PROCESSING REPORT                       ║
+╠══════════════════════════════════════════════════════════════╣
+║ Total Packets:                77                             ║
+║ Total Bytes:                5738                             ║
+║ TCP Packets:                  73                             ║
+║ UDP Packets:                   4                             ║
+╠══════════════════════════════════════════════════════════════╣
+║ Forwarded:                    69                             ║
+║ Dropped:                       8                             ║
+╠══════════════════════════════════════════════════════════════╣
+║ THREAD STATISTICS                                            ║
+║   LB0 dispatched:             53                             ║
+║   LB1 dispatched:             24                             ║
+║   FP0 processed:              53                             ║
+║   FP1 processed:               0                             ║
+║   FP2 processed:               0                             ║
+║   FP3 processed:              24                             ║
+╠══════════════════════════════════════════════════════════════╣
+║                   APPLICATION BREAKDOWN                      ║
+╠══════════════════════════════════════════════════════════════╣
+║ HTTPS                39  50.6% ##########                    ║
+║ Unknown              16  20.8% ####                          ║
+║ YouTube               4   5.2% # (BLOCKED)                   ║
+║ DNS                   4   5.2% #                             ║
+║ Facebook              3   3.9%                               ║
+║ ...                                                          ║
+╚══════════════════════════════════════════════════════════════╝
+
+[Detected Domains/SNIs]
+  - www.youtube.com -> YouTube
+  - www.facebook.com -> Facebook
+  - www.google.com -> Google
+  - github.com -> GitHub
+  ...
+```
+
+### What Each Section Means
+
+| Section | Meaning |
+|---------|---------|
+| Configuration | Number of threads created |
+| Rules | Which blocking rules are active |
+| Total Packets | Packets read from input file |
+| Forwarded | Packets written to output file |
+| Dropped | Packets blocked (not written) |
+| Thread Statistics | Work distribution across threads |
+| Application Breakdown | Traffic classification results |
+| Detected SNIs | Actual domain names found |
+
+---
