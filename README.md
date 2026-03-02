@@ -11,6 +11,7 @@ Deep Packet Inspection (DPI) is a technology used to examine the contents of net
 4. [Networking Background](#4-networking-background)
 5. [Project Overview](#5-project-overview)
 6. [Understanding the Output](#6-understanding-the-output)
+7. [How SNI Extraction Works](#7-how-sni-extraction-works)
 
 ---
 
@@ -225,3 +226,64 @@ TLS Client Hello:
 | Detected SNIs | Actual domain names found |
 
 ---
+
+## 7. How SNI Extraction Works
+
+### The TLS Handshake
+
+When you visit `https://www.youtube.com`:
+
+```
+┌──────────┐                              ┌──────────┐
+│  Browser │                              │  Server  │
+└────┬─────┘                              └────┬─────┘
+     │                                         │
+     │ ──── Client Hello ─────────────────────►│
+     │      (includes SNI: www.youtube.com)    │
+     │                                         │
+     │ ◄─── Server Hello ───────────────────── │
+     │      (includes certificate)             │
+     │                                         │
+     │ ──── Key Exchange ─────────────────────►│
+     │                                         │
+     │ ◄═══ Encrypted Data ══════════════════► │
+     │      (from here on, everything is       │
+     │       encrypted - we can't see it)      │
+```
+
+**We can only extract SNI from the Client Hello!**
+
+### TLS Client Hello Structure
+
+```
+Byte 0:     Content Type = 0x16 (Handshake)
+Bytes 1-2:  Version = 0x0301 (TLS 1.0)
+Bytes 3-4:  Record Length
+
+-- Handshake Layer --
+Byte 5:     Handshake Type = 0x01 (Client Hello)
+Bytes 6-8:  Handshake Length
+
+-- Client Hello Body --
+Bytes 9-10:  Client Version
+Bytes 11-42: Random (32 bytes)
+Byte 43:     Session ID Length (N)
+Bytes 44 to 44+N: Session ID
+... Cipher Suites ...
+... Compression Methods ...
+
+-- Extensions --
+Bytes X-X+1: Extensions Length
+For each extension:
+    Bytes: Extension Type (2)
+    Bytes: Extension Length (2)
+    Bytes: Extension Data
+
+-- SNI Extension (Type 0x0000) --
+Extension Type: 0x0000
+Extension Length: L
+  SNI List Length: M
+  SNI Type: 0x00 (hostname)
+  SNI Length: K
+  SNI Value: "www.youtube.com" ← THE GOAL!
+```
