@@ -12,6 +12,7 @@ Deep Packet Inspection (DPI) is a technology used to examine the contents of net
 5. [Project Overview](#5-project-overview)
 6. [Understanding the Output](#6-understanding-the-output)
 7. [How SNI Extraction Works](#7-how-sni-extraction-works)
+8. [How Blocking Works](#8-how-blocking-works)
 
 ---
 
@@ -287,3 +288,62 @@ Extension Length: L
   SNI Length: K
   SNI Value: "www.youtube.com" ← THE GOAL!
 ```
+
+## 8. How Blocking Works
+
+### Rule Types
+
+| Rule Type | Example | What it Blocks |
+|-----------|---------|----------------|
+| IP | `192.168.1.50` | All traffic from this source |
+| App | `YouTube` | All YouTube connections |
+| Domain | `tiktok` | Any SNI containing "tiktok" |
+
+### The Blocking Flow
+
+```
+Packet arrives
+      │
+      ▼
+┌─────────────────────────────────┐
+│ Is source IP in blocked list?  │──Yes──► DROP
+└───────────────┬─────────────────┘
+                │No
+                ▼
+┌─────────────────────────────────┐
+│ Is app type in blocked list?   │──Yes──► DROP
+└───────────────┬─────────────────┘
+                │No
+                ▼
+┌─────────────────────────────────┐
+│ Does SNI match blocked domain? │──Yes──► DROP
+└───────────────┬─────────────────┘
+                │No
+                ▼
+            FORWARD
+```
+
+### Flow-Based Blocking
+
+**Important:** We block at the *flow* level, not packet level.
+
+```
+Connection to YouTube:
+  Packet 1 (SYN)           → No SNI yet, FORWARD
+  Packet 2 (SYN-ACK)       → No SNI yet, FORWARD  
+  Packet 3 (ACK)           → No SNI yet, FORWARD
+  Packet 4 (Client Hello)  → SNI: www.youtube.com
+                           → App: YOUTUBE (blocked!)
+                           → Mark flow as BLOCKED
+                           → DROP this packet
+  Packet 5 (Data)          → Flow is BLOCKED → DROP
+  Packet 6 (Data)          → Flow is BLOCKED → DROP
+  ...all subsequent packets → DROP
+```
+
+**Why this approach?**
+- We can't identify the app until we see the Client Hello
+- Once identified, we block all future packets of that flow
+- The connection will fail/timeout on the client
+
+---
